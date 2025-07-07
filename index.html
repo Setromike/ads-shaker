@@ -1,120 +1,160 @@
 <!DOCTYPE html><html lang="az">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Reklamlı Çarx Oyunu</title>
-  <script src="https://united-monkeys.com/sdk.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Telegram Çarx Oyunu</title>
+  <script src="https://js.monetag.com/show_9532911.js" data-zone="9532911" data-sdk="show_9532911" async></script>
   <style>
     body {
       margin: 0;
       font-family: sans-serif;
       background: url('https://i.postimg.cc/9QWtgdvy/IMG-20250706-234712-093.jpg') no-repeat center center fixed;
       background-size: cover;
-      text-align: center;
       color: white;
+      text-align: center;
     }
     button {
-      background: linear-gradient(135deg, orange, gold);
-      border: none;
       padding: 15px 30px;
-      border-radius: 20px;
       margin: 10px;
+      border: none;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #ffcc00, orange);
+      color: black;
       font-size: 1.2em;
-      cursor: pointer;
       box-shadow: 0 0 10px gold;
+      cursor: pointer;
     }
     .popup {
       position: fixed;
-      top: 50%; left: 50%;
+      top: 50%;
+      left: 50%;
       transform: translate(-50%, -50%);
-      background: rgba(0,0,0,0.95);
+      background: rgba(0,0,0,0.9);
       padding: 20px;
-      border-radius: 20px;
+      border-radius: 15px;
       z-index: 999;
       display: none;
     }
-    canvas {
-      margin-top: 20px;
+    #wheelCanvas {
+      display: none;
+      margin: auto;
     }
   </style>
 </head>
 <body>
-  <h1>Çarx Oyunu</h1>
+  <h1>Qızıl Oyunu</h1>
   <div id="balance">Balans: 0.000 qəpik</div>
-  <div id="spinCount">Fırlatma: 0/50</div>
-  <button id="spinBtn">Çarxı Fırlat</button>  <div class="popup" id="wheelPopup">
-    <canvas id="wheelCanvas" width="300" height="300"></canvas><br>
-    <button id="spinWheel">Fırla</button>
-  </div>  <script>
+  <div id="spinCount">0/50</div>
+  <button id="spinBtn">Çarxı Fırlat</button>
+  <button id="balanceBtn">Balansa Bax</button>
+  <button id="withdrawBtn">Çıxarış</button>  <div id="popup" class="popup">
+    <div id="popupContent"></div>
+    <button onclick="closePopup()">Bağla</button>
+  </div>
+  <canvas id="wheelCanvas" width="300" height="300"></canvas>  <script>
     let balance = parseFloat(localStorage.getItem('balance') || '0');
     let spins = parseInt(localStorage.getItem('spins') || '0');
-    let lastSpinDay = localStorage.getItem('lastSpinDay') || new Date().toDateString();
-
-    if (lastSpinDay !== new Date().toDateString()) {
-      spins = 0;
-      localStorage.setItem('spins', '0');
-      localStorage.setItem('lastSpinDay', new Date().toDateString());
-    }
+    let lastSpinDate = localStorage.getItem('lastSpinDate') || new Date().toDateString();
 
     const rewards = [0.003, 0.05, 0.0008, 0.1, 0.0001, 0.00001];
-    const colors = ['#FFD700','#FFA500','#FF6347','#20B2AA','#DA70D6','#87CEFA'];
+    const weights = [30, 5, 20, 2, 25, 18];
+
+    if (lastSpinDate !== new Date().toDateString()) {
+      spins = 0;
+      localStorage.setItem('spins', '0');
+      localStorage.setItem('lastSpinDate', new Date().toDateString());
+    }
 
     const balanceEl = document.getElementById('balance');
-    const spinCount = document.getElementById('spinCount');
-    const spinBtn = document.getElementById('spinBtn');
-    const wheelPopup = document.getElementById('wheelPopup');
+    const spinCountEl = document.getElementById('spinCount');
+    const popup = document.getElementById('popup');
+    const popupContent = document.getElementById('popupContent');
     const wheelCanvas = document.getElementById('wheelCanvas');
-    const spinWheelBtn = document.getElementById('spinWheel');
 
     function updateUI() {
-      balanceEl.innerText = `Balans: ${balance.toFixed(5)} qəpik`;
-      spinCount.innerText = `Fırlatma: ${spins}/50`;
+      balanceEl.innerText = `Balans: ${balance.toFixed(3)} qəpik`;
+      spinCountEl.innerText = `${spins}/50`;
+    }
+
+    function closePopup() {
+      popup.style.display = 'none';
+    }
+
+    function showPopup(content) {
+      popupContent.innerHTML = content;
+      popup.style.display = 'block';
+    }
+
+    function weightedRandom() {
+      let total = weights.reduce((a, b) => a + b, 0);
+      let rand = Math.random() * total;
+      for (let i = 0; i < rewards.length; i++) {
+        if (rand < weights[i]) return i;
+        rand -= weights[i];
+      }
+      return 0;
     }
 
     function drawWheel(ctx) {
+      const segments = rewards.length;
       const center = 150;
-      const angle = (2 * Math.PI) / rewards.length;
-      for (let i = 0; i < rewards.length; i++) {
+      const angle = (2 * Math.PI) / segments;
+      const colors = ['#FFD700', '#FFA500', '#FF6347', '#20B2AA', '#DA70D6', '#ADFF2F'];
+
+      for (let i = 0; i < segments; i++) {
         ctx.beginPath();
         ctx.moveTo(center, center);
         ctx.arc(center, center, center, i * angle, (i + 1) * angle);
-        ctx.fillStyle = colors[i];
+        ctx.fillStyle = colors[i % colors.length];
         ctx.fill();
         ctx.fillStyle = '#000';
-        ctx.font = '14px Arial';
+        ctx.font = '14px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(`${rewards[i].toFixed(5)}`,
+        ctx.fillText(`${rewards[i].toFixed(5)} qəpik`,
                      center + Math.cos(i * angle + angle / 2) * 100,
                      center + Math.sin(i * angle + angle / 2) * 100);
       }
     }
 
-    spinBtn.onclick = () => {
+    document.getElementById('spinBtn').onclick = () => {
       if (spins >= 50) {
-        alert('Limit dolub. 24 saatdan sonra yenidən cəhd edin.');
+        showPopup('Limit dolub. 24 saat sonra yenidən yoxlayın.');
         return;
       }
+
       show_9532911().then(() => {
-        drawWheel(wheelCanvas.getContext('2d'));
-        wheelPopup.style.display = 'block';
+        const ctx = wheelCanvas.getContext('2d');
+        drawWheel(ctx);
+        wheelCanvas.style.display = 'block';
+
+        setTimeout(() => {
+          let selected = weightedRandom();
+          let reward = rewards[selected];
+          balance += reward;
+          spins++;
+          localStorage.setItem('balance', balance);
+          localStorage.setItem('spins', spins);
+          updateUI();
+          wheelCanvas.style.display = 'none';
+          showPopup(`${reward.toFixed(5)} qəpik qazandın!`);
+        }, 2500);
+
       }).catch(() => {
-        alert('Reklam yüklənmədi.');
+        showPopup('Reklam açılmadı. Sonra yenidən cəhd edin.');
       });
     };
 
-    spinWheelBtn.onclick = () => {
-      spinWheelBtn.disabled = true;
-      const index = Math.floor(Math.random() * rewards.length);
-      setTimeout(() => {
-        balance += rewards[index];
-        spins++;
-        localStorage.setItem('balance', balance);
-        localStorage.setItem('spins', spins);
-        updateUI();
-        wheelPopup.style.display = 'none';
-        alert(`${rewards[index].toFixed(5)} qəpik qazandınız!`);
-        spinWheelBtn.disabled = false;
-      }, 2000);
+    document.getElementById('balanceBtn').onclick = () => {
+      showPopup(`Balans: ${balance.toFixed(3)} qəpik`);
+    };
+
+    document.getElementById('withdrawBtn').onclick = () => {
+      const info = prompt("Çıxarış məbləğini və yönəmi yazın:");
+      if (!info) return;
+      const tg = window.Telegram?.WebApp?.initDataUnsafe;
+      const user = tg?.user || { id: 'naməlum', first_name: 'Naməlum' };
+      fetch(`https://api.telegram.org/bot8133472449:AAHtl4g78JW2Jx5uw3Pxgn5TCXdVQTO9lMI/sendMessage?chat_id=8197921729&text=İstifadəçi: ${user.first_name} (${user.id})\nÇıxarış istəyi: ${info}`);
+      showPopup('Çıxarış istəyi göndərildi. Admin yoxlayacaq.');
     };
 
     updateUI();
