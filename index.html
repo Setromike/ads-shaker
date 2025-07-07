@@ -1,9 +1,8 @@
-<!DOCTYPE html>
-<html lang="az">
+<!DOCTYPE html><html lang="az">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Çarx Oyunu</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reklamlı Çarx Oyunu</title>
   <script src="https://united-monkeys.com/sdk.js"></script>
   <style>
     body {
@@ -11,8 +10,8 @@
       font-family: sans-serif;
       background: url('https://i.postimg.cc/9QWtgdvy/IMG-20250706-234712-093.jpg') no-repeat center center fixed;
       background-size: cover;
-      color: white;
       text-align: center;
+      color: white;
     }
     button {
       background: linear-gradient(135deg, orange, gold);
@@ -21,146 +20,103 @@
       border-radius: 20px;
       margin: 10px;
       font-size: 1.2em;
-      color: black;
       cursor: pointer;
       box-shadow: 0 0 10px gold;
     }
     .popup {
       position: fixed;
-      top: 50%;
-      left: 50%;
+      top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.9);
+      background: rgba(0,0,0,0.95);
       padding: 20px;
-      border-radius: 15px;
+      border-radius: 20px;
+      z-index: 999;
       display: none;
-      z-index: 10;
     }
     canvas {
-      background: white;
-      border-radius: 50%;
-      display: none;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
-  <h1>Qızıl Çarx Oyunu</h1>
-  <div id="balance">Balans: 0.000 əpik</div>
-  <div id="spins">0/50</div>
-  <button onclick="showAdAndSpin()">Çarxı Fırlat</button>
-  <button onclick="showBalance()">Balansa Bax</button>
-  <button onclick="withdraw()">Çıxarış</button>
-
-  <div id="popup" class="popup"></div>
-  <canvas id="wheel" width="300" height="300"></canvas>
-
-  <script>
+  <h1>Çarx Oyunu</h1>
+  <div id="balance">Balans: 0.000 qəpik</div>
+  <div id="spinCount">Fırlatma: 0/50</div>
+  <button id="spinBtn">Çarxı Fırlat</button>  <div class="popup" id="wheelPopup">
+    <canvas id="wheelCanvas" width="300" height="300"></canvas><br>
+    <button id="spinWheel">Fırla</button>
+  </div>  <script>
     let balance = parseFloat(localStorage.getItem('balance') || '0');
     let spins = parseInt(localStorage.getItem('spins') || '0');
-    let spinDate = localStorage.getItem('spinDate') || new Date().toDateString();
+    let lastSpinDay = localStorage.getItem('lastSpinDay') || new Date().toDateString();
 
-    if (spinDate !== new Date().toDateString()) {
+    if (lastSpinDay !== new Date().toDateString()) {
       spins = 0;
       localStorage.setItem('spins', '0');
-      localStorage.setItem('spinDate', new Date().toDateString());
+      localStorage.setItem('lastSpinDay', new Date().toDateString());
     }
 
-    const rewards = [0.03, 0.008, 0.006, 0.01, 0.10];
-    const weights = [35, 30, 20, 10, 5];
+    const rewards = [0.003, 0.05, 0.0008, 0.1, 0.0001, 0.00001];
+    const colors = ['#FFD700','#FFA500','#FF6347','#20B2AA','#DA70D6','#87CEFA'];
 
-    function updateDisplay() {
-      document.getElementById('balance').textContent = `Balans: ${balance.toFixed(3)} əpik`;
-      document.getElementById('spins').textContent = `${spins}/50`;
+    const balanceEl = document.getElementById('balance');
+    const spinCount = document.getElementById('spinCount');
+    const spinBtn = document.getElementById('spinBtn');
+    const wheelPopup = document.getElementById('wheelPopup');
+    const wheelCanvas = document.getElementById('wheelCanvas');
+    const spinWheelBtn = document.getElementById('spinWheel');
+
+    function updateUI() {
+      balanceEl.innerText = `Balans: ${balance.toFixed(5)} qəpik`;
+      spinCount.innerText = `Fırlatma: ${spins}/50`;
     }
 
-    function showPopup(text) {
-      const popup = document.getElementById('popup');
-      popup.innerHTML = `<p>${text}</p><button onclick=\"closePopup()\">Bağla</button>`;
-      popup.style.display = 'block';
-    }
-
-    function closePopup() {
-      document.getElementById('popup').style.display = 'none';
-    }
-
-    function showBalance() {
-      showPopup(`Balansınız: ${balance.toFixed(3)} əpik`);
-    }
-
-    function withdraw() {
-      const info = prompt('Cıxarış məbləğini və ödəniş yönəmini daxil edin:');
-      if (info) {
-        const tg = window.Telegram?.WebApp?.initDataUnsafe;
-        const user = tg?.user || { id: 'yoxdur', first_name: 'Naməlum' };
-        fetch(`https://api.telegram.org/bot8133472449:AAHtl4g78JW2Jx5uw3Pxgn5TCXdVQTO9lMI/sendMessage?chat_id=8197921729&text=\u0130stifadəçi: ${user.first_name} (${user.id})\nCıxarış istəyi: ${info}`);
-        showPopup('Məlumat göndərildi. Admin yoxladıqdan sonra ödəniş ediləcək.');
+    function drawWheel(ctx) {
+      const center = 150;
+      const angle = (2 * Math.PI) / rewards.length;
+      for (let i = 0; i < rewards.length; i++) {
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.arc(center, center, center, i * angle, (i + 1) * angle);
+        ctx.fillStyle = colors[i];
+        ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${rewards[i].toFixed(5)}`,
+                     center + Math.cos(i * angle + angle / 2) * 100,
+                     center + Math.sin(i * angle + angle / 2) * 100);
       }
     }
 
-    function showAdAndSpin() {
+    spinBtn.onclick = () => {
       if (spins >= 50) {
-        showPopup('Gündəlik limiti dolub. Sabah təkrar yoxlayın.');
+        alert('Limit dolub. 24 saatdan sonra yenidən cəhd edin.');
         return;
       }
-
       show_9532911().then(() => {
-        drawWheel();
-        setTimeout(() => {
-          const reward = pickReward();
-          balance += reward;
-          spins++;
-          localStorage.setItem('balance', balance);
-          localStorage.setItem('spins', spins);
-          updateDisplay();
-          document.getElementById('wheel').style.display = 'none';
-          showPopup(`${reward.toFixed(3)} əpik qazandınız!`);
-        }, 3000);
-      }).catch(() => alert('Reklam göstərilmədi'));
-    }
+        drawWheel(wheelCanvas.getContext('2d'));
+        wheelPopup.style.display = 'block';
+      }).catch(() => {
+        alert('Reklam yüklənmədi.');
+      });
+    };
 
-    function pickReward() {
-      const total = weights.reduce((a, b) => a + b);
-      let rand = Math.random() * total;
-      for (let i = 0; i < weights.length; i++) {
-        if (rand < weights[i]) return rewards[i];
-        rand -= weights[i];
-      }
-      return rewards[0];
-    }
+    spinWheelBtn.onclick = () => {
+      spinWheelBtn.disabled = true;
+      const index = Math.floor(Math.random() * rewards.length);
+      setTimeout(() => {
+        balance += rewards[index];
+        spins++;
+        localStorage.setItem('balance', balance);
+        localStorage.setItem('spins', spins);
+        updateUI();
+        wheelPopup.style.display = 'none';
+        alert(`${rewards[index].toFixed(5)} qəpik qazandınız!`);
+        spinWheelBtn.disabled = false;
+      }, 2000);
+    };
 
-    function drawWheel() {
-      const canvas = document.getElementById('wheel');
-      const ctx = canvas.getContext('2d');
-      const segments = rewards.length;
-      const angle = 2 * Math.PI / segments;
-      const colors = ['#FFD700', '#FFA500', '#FF6347', '#20B2AA', '#DA70D6'];
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      for (let i = 0; i < segments; i++) {
-        ctx.beginPath();
-        ctx.moveTo(150, 150);
-        ctx.arc(150, 150, 150, i * angle, (i + 1) * angle);
-        ctx.fillStyle = colors[i % colors.length];
-        ctx.fill();
-        ctx.fillStyle = 'black';
-        ctx.font = '14px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(`${rewards[i].toFixed(3)} əpik`,
-          150 + Math.cos(i * angle + angle / 2) * 100,
-          150 + Math.sin(i * angle + angle / 2) * 100);
-      }
-      canvas.style.display = 'block';
-    }
-
-    updateDisplay();
-  </script>
-</body>
+    updateUI();
+  </script></body>
 </html>
-
-
-Kod tam istədiyiniz kimi işlək və reklam dəstəyi ilə quruldu. Reklam göstərildikdən sonra çarx görünür, fırlanır, nəticə balansa əlavə olunur və popup çıxır.
-
-Faylı GitHub Pages üçün index.html adı ilə yükləyin. İndi ads-shakee repozitoriyanızda səhifə aktivləşdirildikdə link belə olacaq:
-
-https://setromike.github.io/ads-shakee/
-
-Əgər əlavə dəyişiklik istəyirsinizsə (reklam kodu, çarx dizaynı, balans limiti və s.), mən buradayam.
