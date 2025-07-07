@@ -1,162 +1,45 @@
-<!DOCTYPE html><html lang="az">
+<!DOCTYPE html>
+<html lang="az">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Telegram Çarx Oyunu</title>
-  <script src="https://js.monetag.com/show_9532911.js" data-zone="9532911" data-sdk="show_9532911" async></script>
+  <meta charset="UTF-8">
+  <title>Reklam Testi</title>
+  <script src="https://united-monkeys.com/sdk.js"></script>
   <style>
     body {
-      margin: 0;
-      font-family: sans-serif;
-      background: url('https://i.postimg.cc/9QWtgdvy/IMG-20250706-234712-093.jpg') no-repeat center center fixed;
-      background-size: cover;
-      color: white;
+      font-family: Arial, sans-serif;
       text-align: center;
+      padding-top: 100px;
+      background: #111;
+      color: white;
     }
     button {
       padding: 15px 30px;
-      margin: 10px;
+      background: gold;
       border: none;
-      border-radius: 20px;
-      background: linear-gradient(135deg, #ffcc00, orange);
-      color: black;
-      font-size: 1.2em;
-      box-shadow: 0 0 10px gold;
+      border-radius: 10px;
+      font-size: 18px;
       cursor: pointer;
-    }
-    .popup {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0,0,0,0.9);
-      padding: 20px;
-      border-radius: 15px;
-      z-index: 999;
-      display: none;
-    }
-    #wheelCanvas {
-      display: none;
-      margin: auto;
+      box-shadow: 0 0 10px #ffd700;
     }
   </style>
 </head>
 <body>
-  <h1>Qızıl Oyunu</h1>
-  <div id="balance">Balans: 0.000 qəpik</div>
-  <div id="spinCount">0/50</div>
-  <button id="spinBtn">Çarxı Fırlat</button>
-  <button id="balanceBtn">Balansa Bax</button>
-  <button id="withdrawBtn">Çıxarış</button>  <div id="popup" class="popup">
-    <div id="popupContent"></div>
-    <button onclick="closePopup()">Bağla</button>
-  </div>
-  <canvas id="wheelCanvas" width="300" height="300"></canvas>  <script>
-    let balance = parseFloat(localStorage.getItem('balance') || '0');
-    let spins = parseInt(localStorage.getItem('spins') || '0');
-    let lastSpinDate = localStorage.getItem('lastSpinDate') || new Date().toDateString();
+  <h1>Monetag Reklam Testi</h1>
+  <p>Reklamı sınaqdan keçirmək üçün aşağıdakı düyməyə klikləyin:</p>
+  <button onclick="playAd()">Reklama Bax</button>
 
-    const rewards = [0.003, 0.05, 0.0008, 0.1, 0.0001, 0.00001];
-    const weights = [30, 5, 20, 2, 25, 18];
-
-    if (lastSpinDate !== new Date().toDateString()) {
-      spins = 0;
-      localStorage.setItem('spins', '0');
-      localStorage.setItem('lastSpinDate', new Date().toDateString());
-    }
-
-    const balanceEl = document.getElementById('balance');
-    const spinCountEl = document.getElementById('spinCount');
-    const popup = document.getElementById('popup');
-    const popupContent = document.getElementById('popupContent');
-    const wheelCanvas = document.getElementById('wheelCanvas');
-
-    function updateUI() {
-      balanceEl.innerText = `Balans: ${balance.toFixed(3)} qəpik`;
-      spinCountEl.innerText = `${spins}/50`;
-    }
-
-    function closePopup() {
-      popup.style.display = 'none';
-    }
-
-    function showPopup(content) {
-      popupContent.innerHTML = content;
-      popup.style.display = 'block';
-    }
-
-    function weightedRandom() {
-      let total = weights.reduce((a, b) => a + b, 0);
-      let rand = Math.random() * total;
-      for (let i = 0; i < rewards.length; i++) {
-        if (rand < weights[i]) return i;
-        rand -= weights[i];
-      }
-      return 0;
-    }
-
-    function drawWheel(ctx) {
-      const segments = rewards.length;
-      const center = 150;
-      const angle = (2 * Math.PI) / segments;
-      const colors = ['#FFD700', '#FFA500', '#FF6347', '#20B2AA', '#DA70D6', '#ADFF2F'];
-
-      for (let i = 0; i < segments; i++) {
-        ctx.beginPath();
-        ctx.moveTo(center, center);
-        ctx.arc(center, center, center, i * angle, (i + 1) * angle);
-        ctx.fillStyle = colors[i % colors.length];
-        ctx.fill();
-        ctx.fillStyle = '#000';
-        ctx.font = '14px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(`${rewards[i].toFixed(5)} qəpik`,
-                     center + Math.cos(i * angle + angle / 2) * 100,
-                     center + Math.sin(i * angle + angle / 2) * 100);
+  <script>
+    function playAd() {
+      if (typeof show_9532911 === 'function') {
+        show_9532911().then(() => {
+          alert("✅ Reklam göstərildi və bitdi!");
+        }).catch(() => {
+          alert("❌ Reklam göstərilə bilmədi.");
+        });
+      } else {
+        alert("❌ show_9532911 funksiyası tapılmadı. SDK yüklənmir.");
       }
     }
-
-    document.getElementById('spinBtn').onclick = () => {
-      if (spins >= 50) {
-        showPopup('Limit dolub. 24 saat sonra yenidən yoxlayın.');
-        return;
-      }
-
-      show_9532911().then(() => {
-        const ctx = wheelCanvas.getContext('2d');
-        drawWheel(ctx);
-        wheelCanvas.style.display = 'block';
-
-        setTimeout(() => {
-          let selected = weightedRandom();
-          let reward = rewards[selected];
-          balance += reward;
-          spins++;
-          localStorage.setItem('balance', balance);
-          localStorage.setItem('spins', spins);
-          updateUI();
-          wheelCanvas.style.display = 'none';
-          showPopup(`${reward.toFixed(5)} qəpik qazandın!`);
-        }, 2500);
-
-      }).catch(() => {
-        showPopup('Reklam açılmadı. Sonra yenidən cəhd edin.');
-      });
-    };
-
-    document.getElementById('balanceBtn').onclick = () => {
-      showPopup(`Balans: ${balance.toFixed(3)} qəpik`);
-    };
-
-    document.getElementById('withdrawBtn').onclick = () => {
-      const info = prompt("Çıxarış məbləğini və yönəmi yazın:");
-      if (!info) return;
-      const tg = window.Telegram?.WebApp?.initDataUnsafe;
-      const user = tg?.user || { id: 'naməlum', first_name: 'Naməlum' };
-      fetch(`https://api.telegram.org/bot8133472449:AAHtl4g78JW2Jx5uw3Pxgn5TCXdVQTO9lMI/sendMessage?chat_id=8197921729&text=İstifadəçi: ${user.first_name} (${user.id})\nÇıxarış istəyi: ${info}`);
-      showPopup('Çıxarış istəyi göndərildi. Admin yoxlayacaq.');
-    };
-
-    updateUI();
-  </script></body>
+  </script>
+</body>
 </html>
